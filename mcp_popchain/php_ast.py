@@ -55,6 +55,7 @@ def analyze(text: str):
                         if mname:
                             calls = []
                             uses = []
+                            invokes = []
                             sinks = []
                             if body:
                                 stack = [body]
@@ -69,6 +70,13 @@ def analyze(text: str):
                                                 if z.type in ("name", "qualified_name"):
                                                     fn = _node_text(b, z)
                                                     break
+                                                if z.type in ("member_access_expression", "property_access_expression"):
+                                                    for v_i in range(z.child_count):
+                                                        v_n = z.child(v_i)
+                                                        if v_n.type == "variable_name":
+                                                            vv = _node_text(b, v_n)
+                                                            if vv.startswith("$this->"):
+                                                                invokes.append(vv.split("->")[-1])
                                             if fn:
                                                 calls.append(fn)
                                         if y.type in ("member_access_expression", "property_access_expression"):
@@ -84,6 +92,7 @@ def analyze(text: str):
                                 "line": body.start_point[0] + 1 if body else 1,
                                 "calls": calls,
                                 "uses": list(sorted(set(uses))),
+                                "invokes": list(sorted(set(invokes))),
                             })
                 results.append({
                     "name": cname or "",

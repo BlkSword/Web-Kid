@@ -15,6 +15,7 @@ class MagicMethodInfo(BaseModel):
     sinks: List[SinkInfo]
     calls: List[str]
     uses_properties: List[str] = []
+    invokes_properties: List[str] = []
 
 
 class ClassInfo(BaseModel):

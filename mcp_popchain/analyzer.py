@@ -98,7 +98,7 @@ def find_classes_ast(file: PHPFile) -> List[ClassInfo]:
             if mname in MAGIC_METHODS:
                 calls = [x for x in m.get("calls", []) if x.lower() in {s.lower() for s in SINKS}]
                 sinks = [SinkInfo(name=x, file=file.path, line=m["line"]) for x in calls]
-                methods.append(MagicMethodInfo(name=mname, file=file.path, line=m["line"], sinks=sinks, calls=list(sorted(set(calls))), uses_properties=m.get("uses", [])))
+                methods.append(MagicMethodInfo(name=mname, file=file.path, line=m["line"], sinks=sinks, calls=list(sorted(set(calls))), uses_properties=m.get("uses", []), invokes_properties=m.get("invokes", [])))
         out.append(ClassInfo(name=c["name"], file=file.path, methods=methods, properties=c.get("properties", [])))
     return out
 

@@ -15,10 +15,12 @@ from .models import (
     KBMatches,
     SinkSpec,
     SourceSpec,
+    ClassInfo,
 )
-from .analyzer import analyze_php_repo
-from .solver import build_chain as build_chain_impl
-from .payload import php_serialize_object
+from .analyzer import analyze_php_repo, find_classes_ast, find_classes, PHPFile
+from .gadgets import sniff_trampolines
+from .solver import build_chain as build_chain_impl, build_trampoline_chain as build_trampoline_chain_impl
+from .payload import php_serialize_object, generate_payload_script
 from .simulator import simulate_unserialize as simulate_impl
 from .knowledge_base import kb_search as kb_search_impl, kb_match_by_packages as kb_match_by_packages_impl
 
@@ -115,3 +117,19 @@ if __name__ == "__main__":
 @mcp.tool()
 def kb_match_by_packages_tool(summary: AnalysisSummary) -> KBMatches:
     return kb_match_by_packages_impl(summary)
+@mcp.tool()
+def parse_code_structure_tool(code: str) -> List[ClassInfo]:
+    f = PHPFile(path="snippet.php", text=code)
+    cs = find_classes_ast(f)
+    if not cs:
+        cs = find_classes(f)
+    return cs
+@mcp.tool()
+def sniff_trampolines_tool(summary: AnalysisSummary) -> GadgetCandidates:
+    return sniff_trampolines(summary.classes)
+@mcp.tool()
+def generate_payload_script_tool(className: str, properties: Dict[str, Any]) -> str:
+    return generate_payload_script(className, properties)
+@mcp.tool()
+def build_trampoline_chain_tool(summary: AnalysisSummary) -> Chains:
+    return build_trampoline_chain_impl(summary.classes)

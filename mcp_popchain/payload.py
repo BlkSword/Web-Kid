@@ -32,3 +32,13 @@ def php_serialize_object(class_name: str, props: Dict[str, Any]) -> str:
         parts.append(php_serialize_value(v))
     body = "".join(parts)
     return f"O:{len(class_name)}:\"{class_name}\":{len(props)}:{{" + body + "}}"
+
+
+def generate_payload_script(class_name: str, props: Dict[str, Any]) -> str:
+    payload = php_serialize_object(class_name, props)
+    return (
+        "<?php\n" +
+        "$payload = '" + payload.replace("\\", "\\\\").replace("'", "\\'") + "';\n" +
+        "echo $payload;\n" +
+        "?>"
+    )
