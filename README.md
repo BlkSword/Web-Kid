@@ -6,9 +6,13 @@ Web-Kid 集成了一套面向 CTF 反序列化（pop 链）题目的 MCP 服务�
 ## 主要功能
 - 代码审计：扫描类、魔术方法与危险调用，输出结构化报告。
 - 链路发现：按触发类型与可达 sink 生成候选链，并排序。
+- Trampoline 链构建：自动串联 `__wakeup` → `__toString` → `__get` → `__invoke` 等跳板。
+- Gadget 嗅探：基于字符串上下文与可调用属性的启发式检测常见 gadget。
 - 约束校验：环境与配置提示（PHP 版本、autoload 等）。
 - Payload 生成：输出 PHP `serialize()` 字符串与结构化描述。
+- Payload 生成脚本：生成可直接在 PHP 中输出 payload 的脚本片段。
 - 静态模拟：模拟 `unserialize` 触发序列标注到达情况。
+- 片段解析：对单段 PHP 代码解析类/方法/属性与基本数据流。
 - 知识库检索：按框架或 Composer 包匹配常见 gadget 提示。
 
 ## 快速开始
@@ -17,22 +21,28 @@ Web-Kid 集成了一套面向 CTF 反序列化（pop 链）题目的 MCP 服务�
   - `summary = analyze_php_repo("path/to/challenge", [])`
 - 启动 MCP 服务器（stdio）：
   - `python -c "from mcp_popchain.server import run; run()"`
+  - 或 `python -m mcp_popchain.server`
 - 启动 MCP 服务器（streamable-http）：
-  - `python -m mcp_popchain.app_http`
+  - `python -c "from mcp_popchain.server import run_http; run_http()"`
+  - 或 `python -m mcp_popchain.app_http`
 
 ## MCP 工具
 - `analyze_php_repo_tool(rootPath, includes=[])`
 - `list_magic_methods_tool(summary)`
 - `find_gadgets_tool(summary, targetSink)`
+- `sniff_trampolines_tool(summary)`
 - `build_chain_tool(summary, sources, sink)`
+- `build_trampoline_chain_tool(summary)`
 - `generate_payload_tool(className, properties)`
+- `generate_payload_script_tool(className, properties)`
 - `simulate_unserialize_tool(spec)`
 - `check_constraints_tool(env)`
 - `kb_search_tool(keyword, version=None)`
 - `kb_match_by_packages_tool(summary)`
+- `parse_code_structure_tool(code)`
 
 ## AST 解析
-- 默认尝试使用 `tree-sitter-php`（通过 `tree_sitter_languages` 包）进行 AST 级解析与基础数据流识别；如未安装则自动回退到启发式静态扫描。
+- 默认尝试使用 `tree-sitter-php`（通过 `tree_sitter_languages` 包）进行 AST 级解析与基础数据流识别，包括属性访问与可调用属性的识别；如未安装则自动回退到启发式静态扫描。
 - 建议安装：
   - `pip install tree-sitter tree-sitter-languages`
 
@@ -76,3 +86,24 @@ Web-Kid 集成了一套面向 CTF 反序列化（pop 链）题目的 MCP 服务�
 }
 ```
 
+- 以模块方式运行：
+
+```json
+{
+  "mcpServers": {
+    "ctf-popchain": {
+      "command": "python",
+      "args": [
+        "-m",
+        "mcp_popchain.server"
+      ]
+    }
+  }
+}
+```
+
+- 启用 `streamable-http` 传输可单独启动服务，再在客户端以 HTTP 方式连接：
+
+```
+python -m mcp_popchain.app_http
+```
